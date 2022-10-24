@@ -25,6 +25,9 @@ nix-repl> let e="e";in[001.2e01e.30.4]
 
 Starting and ending floats with `.` leads to some ambiguity, and removing this feature would be an
 obvious improvement.
+
+Currently, leading 0's in ints are ignored, which causes confusing when things like `UMask = 0027` seem to work.
+
 Removing leading 0's from ints opens the door for binary, octal and hexadecimal literals in the future.
 
 Allowing integers to contain `_` is nice while we're at it. See [PEP-515](https://peps.python.org/pep-0515) for more details.
@@ -44,6 +47,16 @@ Allowing integers to contain `_` is nice while we're at it. See [PEP-515](https:
 
 ## How?
 
+
+Change the float regex from
+`(([1-9][0-9]*\.[0-9]*)|(0?\.[0-9]+))([Ee][+-]?[0-9]+)?`
+to
+`(([1-9][0-9]*\.[0-9]*)|(0\.[0-9]+))([Ee][+-]?[0-9]+)?`
+
+And change the int regex from
+`[0-9]+`
+to
+`0|[1-9][0-9]*`
 todo insert regex here.
 
 Change the lexer.i and parser.y files. Update the tests.
@@ -51,8 +64,10 @@ Change the lexer.i and parser.y files. Update the tests.
 # Drawbacks
 [drawbacks]: #drawbacks
 
-This change will break some code, but floats are not used very often. There is no breakage
-in nixpkgs.
+The float change will break some code, but floats are not used very often. 
+The int change will break some currently confusing code, mainly
+in systemd units where masks get converted back to a string and then reinterpreted
+as octal.
 
 # Alternatives
 [alternatives]: #alternatives
